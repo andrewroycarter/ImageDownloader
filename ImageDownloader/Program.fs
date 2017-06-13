@@ -2,6 +2,14 @@
 // See the 'F# Tutorial' project for more help.
 
 open FSharp.Data
+open System
+
+module String =
+    let contains string (input:string) = input.Contains string
+
+    let split separators (input:string) = input.Split separators
+
+    let newlineConcat string input = string + "\n" + input
 
 type Page = JsonProvider<"""
 {
@@ -20,12 +28,6 @@ let getPage = async {
     with error -> return Error error
 }
 
-let contains string (input:string) = input.Contains string
-
-let split separators (input:string) = input.Split separators
-
-let newlineConcat string input = string + "\n" + input
-
 let placeholderImages (page:Page.Root) =
     page.Results
     |> Seq.collect (fun result ->
@@ -33,8 +35,8 @@ let placeholderImages (page:Page.Root) =
         | Some image -> [image.Url]
         | None -> []
         )
-    |> Seq.filter (contains "nopic")
-    |> Seq.distinctBy (split [|'_'|] >> Array.last)
+    |> Seq.filter (String.contains "nopic")
+    |> Seq.distinctBy (String.split [|'_'|] >> Array.last)
 
 [<EntryPoint>]
 let main argv = 
@@ -43,7 +45,7 @@ let main argv =
     |> Result.map placeholderImages
     |> (fun result ->
         match result with
-        | Ok images -> Seq.fold newlineConcat "" images
+        | Ok images -> Seq.fold String.newlineConcat "" images
         | Error error -> sprintf "Error downloading images: %s" <| error.ToString ()
         )
     |> printfn "%s"
