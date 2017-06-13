@@ -13,12 +13,18 @@ type Page = JsonProvider<"""
 }
 """>
 
-let getPage :Async<Result<Page.Root, exn>> = async {
+let getPage = async {
     try 
         let! page = Page.AsyncLoad ("INSERT_URL_HERE")
         return Ok page
     with error -> return Error error
 }
+
+let contains string (input:string) = input.Contains string
+
+let split separators (input:string) = input.Split separators
+
+let newlineConcat string input = string + "\n" + input
 
 let placeholderImages (page:Page.Root) =
     page.Results
@@ -27,17 +33,17 @@ let placeholderImages (page:Page.Root) =
         | Some image -> [image.Url]
         | None -> []
         )
-    |> Seq.filter (fun url -> url.Contains "nopic")
-    |> Seq.distinctBy (fun url -> Array.last <| url.Split [|'_'|])
+    |> Seq.filter (contains "nopic")
+    |> Seq.distinctBy (split [|'_'|] >> Array.last)
 
 [<EntryPoint>]
 let main argv = 
     getPage
     |> Async.RunSynchronously
-    |> Result.map (fun page -> placeholderImages page)
+    |> Result.map placeholderImages
     |> (fun result ->
         match result with
-        | Ok images -> Seq.fold (fun state image -> state + "\n" + image) "" images
+        | Ok images -> Seq.fold newlineConcat "" images
         | Error error -> sprintf "Error downloading images: %s" <| error.ToString ()
         )
     |> printfn "%s"
